@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include <map>
+#include <sstream>
 
 // home login or register
 
@@ -9,15 +9,16 @@ void home();
 
 // login
 
-void login(std::map<std::string, std::string> &user_map);
+void login();
 // regis
 
 void regis();
-std::string password_regis();
+bool check_username(std::string username);
 
 // main menu
 
 void main_menu();
+
 
 int main() {
 	
@@ -28,9 +29,7 @@ int main() {
 }
 
 void home() {
-	
-	std::map<std::string, std::string> user_map;
-	user_map.insert(std::pair<std::string, std::string>("tora","apple"));
+
 	
 	int x;
 	
@@ -46,35 +45,50 @@ void home() {
 	}
 	
 	switch (x) {
-		case 1: login(user_map); break;
+		case 1: login(); break;
+		
 		case 2: regis(); break;
-		case 3: std::cout << "Exit" << std::endl; exit(0);
+		
+		case 3: std::cout << "Exit" << std::endl; exit(1);
 	}
 
 }
 
-void login(std::map<std::string, std::string> &user_map){
+void login(){
 	
+	std::string username;
+	std::string password;
 	std::string username_input;
 	std::string password_input;
+	std::string line;
 	std::cout << ">> Input username : ";
 	std::cin >> username_input;
 	std::cout << ">> Input password : ";
 	std::cin >> password_input;
 	
-	for (auto& it : user_map) {
-		if (it.first == username_input) {
-			if (it.second == password_input) {
-				std::cout << ">> Login succes." << std::endl;
-				break;
-			} else {
-				std::cout << ">> Wrong password." << std::endl;
-				login(user_map);
-			}
-		} else {
-			std::cout << ">> Username not found." << std::endl;
-			login(user_map);
+	std::fstream Myfile;
+	Myfile.open("data.txt", std::ios::in|std::ios::out);
+		
+	if (Myfile.is_open())
+	{
+		while(getline(Myfile, line))                 // read all the lines
+		if (line.find(username_input) != std::string::npos) // search each line
+		{ 
+			std::stringstream ss(line);
+			ss >> username >> password;
 		}
+	}
+	
+	Myfile.close();
+
+	if (username_input != username) {
+		std::cout << ">> Username not found." << std::endl;
+		login();	
+	} else if (password_input == password) {
+		std::cout << ">> Login succes." << std::endl;
+	} else {
+		std::cout << ">> Wrong password." << std::endl;
+		login();
 	}
 	
 }
@@ -83,47 +97,73 @@ void login(std::map<std::string, std::string> &user_map){
 
 void regis() {
 	
-	std::ofstream myfile ("data.txt", std::ios::out | std::ios::app);
-		
-	std::map<std::string, std::string> user_map;
-	std::string password;
-	std::string username;
-	std::cout << ">> Input new username : ";
-	std::cin >> username;
-	password = password_regis();
-	user_map.insert(std::pair<std::string, std::string>(username, password));	
-
-	if (myfile.is_open())
-	{
-		myfile << username << '\t' << password << '\n';
-		myfile.close();
-	}
-	else
-		std::cout << "Error opening file" << std::endl;
-}
-
-std::string password_regis(){
+	bool is_exist = true;
 	
+	std::fstream FILE;
 	std::string password;
 	std::string password_compare;
+	std::string username;
+	std::string line;
+	std::cout << ">> Input new username : ";
+	std::cin >> username;
+	while (is_exist) {
+		is_exist = check_username(username);
+		if (is_exist) {
+			std::cout << ">> Username already exist." << std::endl;
+			std::cout << ">> Input new username : ";
+			std::cin >> username;
+		}
+	}
 	std::cout << ">> Input new password : ";
 	std::cin >> password;
 	std::cout << ">> Input your password again : ";
 	std::cin >> password_compare;
-	if (password == password_compare)
-	{ 
-		std::cout << ">> Register succes !." << std::endl;
-		home();
-	}
-	else {
-		std::cout << ">> Your password did not match !." << std::endl;
-		password_regis();}
-		
 	
-	return password;	
+
+	FILE.open("data.txt", std::ios::app | std::ios::out| std::ios::in);
+	
+
+	while (password != password_compare) {
+		
+		std::cout << ">> Your password did not match !." << std::endl;
+		std::cout << ">> Input new password : ";
+		std::cin >> password;
+		std::cout << ">> Input your password again : ";
+		std::cin >> password_compare;
+	}
+	FILE << std::endl;
+	FILE << username << '\t' << password << '\n';	
+	FILE.close();
+	std::cout << ">> Register succes !." << std::endl;
+	home();
+	
 }
 
-void main_menu(){
+bool check_username(std::string username) {
+	
+	bool is_exist = false;
+	
+	std::fstream FILE;
+	FILE.open("data.txt", std::ios::app | std::ios::out| std::ios::in);
+	std::string line;
+	
+	if (FILE.is_open())
+	{
+		while(getline(FILE, line)) 
+			// read all the lines
+		if (line.find(username) != std::string::npos) // search each line
+		{ 
+			is_exist = true;
+		}
+	}
+	
+	FILE.close();
+	
+	return is_exist;
+}
+
+void main_menu() {
 	std::cout << ">> Welcome, you entered the main menu !" << std::endl;
 }
+
 
